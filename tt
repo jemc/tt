@@ -1,10 +1,17 @@
 #!/usr/bin/bash
 
 REFRESH_TIME=0.2
+
 FORMAT_DURATION="%H:%M:%S"
 FORMAT_TIME="%H:%M:%S"
 FORMAT_DATE="%a %b %d %Y"
-FORMAT_ENTRY="  \${duration} | \${last_date} | \${last_time} - \${curr_time}"
+FORMAT_ENTRY="  \${duration} | \${last_date} | \${last_time} - \${curr_time} \n"
+
+ENTRIES=(\
+  "  a test1 \n" \
+  "  b test2 \n" \
+  "  c test3 \n" \
+)
 
 function update_time {
   curr_date=$(date +"$FORMAT_DATE")
@@ -17,29 +24,34 @@ function start_entry {
   last_date=$curr_date
   last_time=$curr_time
   last_secs=$curr_secs
-  update_entry
+  update_curr_entry
 }
 
-function update_entry {
+function update_curr_entry {
   update_time
   duration=$(date -u -d @"$((curr_secs-last_secs))" +"$FORMAT_DURATION")
   eval "curr_entry=\"$FORMAT_ENTRY\""
 }
 
-function show_entry {
-  echo "$curr_entry"
+function show_curr_entry {
+  echo -ne "${curr_entry}"
 }
 
 function do_over {
   echo -ne "\033[1A"
 }
 
+
+for entry in "${ENTRIES[@]}"; do
+  echo -ne "${entry}"
+done
+
 start_entry
-show_entry
+show_curr_entry
 
 while true; do
-  update_entry
+  update_curr_entry
   do_over
-  show_entry
+  show_curr_entry
   sleep $REFRESH_TIME
 done
