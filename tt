@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+
+echo -ne "whup"
+
+sleep 0.5
+
+echo -ne "\033[3Dbup"
