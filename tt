@@ -1,15 +1,23 @@
 #!/usr/bin/bash
 
-REFRESH_TIME=0.2
-
-FORMAT_DURATION="%H:%M:%S"
-FORMAT_TIME="%H:%M:%S"
-FORMAT_DATE="%a %b %d %Y"
-FORMAT_ENTRY=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time} \n"
-
-ENTRIES=(\
+# Associative array of default options
+declare -A default_opts=( \
+  ["refresh_time"]=0.2 \
+   \
+  ["format_duration"]="%H:%M:%S" \
+  ["format_time"]="%H:%M:%S" \
+  ["format_date"]="%a %b %d %Y" \
+  ["format_entry"]=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time}" \
 )
 
+# Associative array of operational options - start by copying all defaults
+declare -A opts=()
+for key in "${!default_opts[@]}"; do
+  opts["$key"]="${default_opts["$key"]}"
+done
+
+entries=(\
+)
 
 file=$1
 file_dir=$(dirname $file)
@@ -20,10 +28,15 @@ touch $file
 # TODO: add warning about eval that shows the first time the program runs
 # eval $file
 
+# TODO use getopts for other actions
+# insert an arbitrary message as an entry with (-m)
+# specify a different output file than input file (-o)
+# specify a different output format than input format (-f)
+
 
 function update_time {
-  curr_date=$(date +"$FORMAT_DATE")
-  curr_time=$(date +"$FORMAT_TIME")
+  curr_date=$(date +"${opts['format_date']}")
+  curr_time=$(date +"${opts['format_time']}")
   curr_secs=$(date +"%s")
 }
 
@@ -32,42 +45,54 @@ function start_entry {
   last_date=$curr_date
   last_time=$curr_time
   last_secs=$curr_secs
-  ENTRIES[${#ENTRIES[@]}]=""
+  entries[${#entries[@]}]=""
   update_curr_entry
 }
 
 function update_curr_entry {
   update_time
-  duration=$(date -u -d @"$((curr_secs-last_secs))" +"$FORMAT_DURATION")
-  eval "curr_entry=\"$FORMAT_ENTRY\""
-  ENTRIES[${#ENTRIES[@]}-1]="${curr_entry}"
+  duration=$(date -u -d @"$((curr_secs-last_secs))" +"${opts['format_duration']}")
+  eval "curr_entry=\"${opts['format_entry']}\""
+  entries[${#entries[@]}-1]="${curr_entry}"
 }
 
 function show_curr_entry {
-  echo -ne "${curr_entry}"
+  echo "${curr_entry}"
 }
 
 function do_over {
   echo -ne "\033[1A"
 }
 
+
+function read_file {
+  regexp_simple="A"
+  regexp_var="^([A-Za-z_]+)=\"(.*)\"$"
+
+  while IFS= read -r line; do
+    # printf '%s\n' "$line"
+    if [[ $line =~ $regexp_simple ]]; then
+      echo "whup ${line}"
+    fi
+  done < "$file"
+}
+
 function save_file {
   
   sh -c "cat > ${file}" <<MYEOF
 
-REFRESH_TIME=${REFRESH_TIME}
+refresh_time="${opts["refresh_time"]}"
 
-FORMAT_DURATION="${FORMAT_DURATION}"
-FORMAT_TIME="${FORMAT_TIME}"
-FORMAT_DATE="${FORMAT_DATE}"
-FORMAT_ENTRY="${FORMAT_ENTRY//\$/\\\$}"
+format_duration="${opts["format_duration"]}"
+format_time="${opts['format_time']}"
+format_date="${opts['format_date']}"
+format_entry="${opts['format_entry']//\$/\\\$}"
 
-ENTRIES=(\\
+entries:
 $(
-for entry in "${ENTRIES[@]}"; do
-  echo \ \ \""${entry}"\" \\
+for entry in "${entries[@]}"; do
+  echo "${entry}"
 done
-)
 )
 
 MYEOF
@@ -84,8 +109,8 @@ function trap_func {
 trap trap_func SIGINT SIGTERM
 
 
-for entry in "${ENTRIES[@]}"; do
-  echo -ne "${entry}"
+for entry in "${entries[@]}"; do
+  echo "${entry}"
 done
 
 start_entry
@@ -95,5 +120,5 @@ while true; do
   update_curr_entry
   do_over
   show_curr_entry
-  sleep $REFRESH_TIME
+  sleep "${opts['refresh_time']}"
 done
