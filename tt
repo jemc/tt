@@ -15,7 +15,9 @@ function update_entry {
   curr_entry="??:?? | ${last_date} | ${last_time} - ${curr_time}"
 }
 
-do_over="echo -ne \033[1A"
+function do_over {
+  echo -ne "\033[1A"
+}
 
 update_time
 create_entry
@@ -24,5 +26,5 @@ sleep 1
 
 update_time
 update_entry
-$do_over
+do_over
 echo "$curr_entry"
