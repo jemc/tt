@@ -5,7 +5,7 @@ REFRESH_TIME=0.2
 FORMAT_DURATION="%H:%M:%S"
 FORMAT_TIME="%H:%M:%S"
 FORMAT_DATE="%a %b %d %Y"
-FORMAT_ENTRY="  \${duration} | \${last_date} | \${last_time} - \${curr_time} \n"
+FORMAT_ENTRY=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time} \n"
 
 ENTRIES=(\
   "  a test1 \n" \
@@ -53,7 +53,25 @@ function do_over {
 }
 
 function save_file {
-  dummy="dummy"
+  frmt_entry="$(echo -ne "${FORMAT_ENTRY}" | sed 's/\$/\\\$/g')"
+  
+  sh -c "cat > ${file}" <<MYEOF
+
+REFRESH_TIME=${REFRESH_TIME}
+
+FORMAT_DURATION="${FORMAT_DURATION}"
+FORMAT_TIME="${FORMAT_TIME}"
+FORMAT_DATE="${FORMAT_DATE}"
+FORMAT_ENTRY="${frmt_entry}"
+
+ENTRIES=(\\
+  "  a test1 \n" \\
+  "  b test2 \n" \\
+  "  c test3 \n" \\
+)
+
+MYEOF
+
 }
 
 function trap_func {
