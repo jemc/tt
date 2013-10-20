@@ -64,13 +64,13 @@ function do_over {
 
 
 function read_file {
-  regexp_simple="A"
-  regexp_var="^([A-Za-z_]+)=\"(.*)\"$"
+  # regexp_simple="A"
+  regexp_var="^\s*([A-Za-z_]+)\s*=\s*\"(.*)\"\s*$"
 
   while IFS= read -r line; do
     # printf '%s\n' "$line"
-    if [[ $line =~ $regexp_simple ]]; then
-      echo "whup ${line}"
+    if [[ $line =~ $regexp_var ]]; then
+      opts["${BASH_REMATCH[1]}"]=$"${BASH_REMATCH[2]}"
     fi
   done < "$file"
 }
@@ -84,7 +84,7 @@ refresh_time="${opts["refresh_time"]}"
 format_duration="${opts["format_duration"]}"
 format_time="${opts['format_time']}"
 format_date="${opts['format_date']}"
-format_entry="${opts['format_entry']//\$/\\\$}"
+format_entry="${opts['format_entry']}"
 
 entries:
 $(
@@ -92,7 +92,6 @@ for entry in "${entries[@]}"; do
   echo "${entry}"
 done
 )
-
 MYEOF
 
 }
@@ -106,6 +105,8 @@ function trap_func {
 }
 trap trap_func SIGINT SIGTERM
 
+
+read_file
 
 for entry in "${entries[@]}"; do
   echo "${entry}"
