@@ -6,33 +6,34 @@ function update_time {
   curr_secs=$(date +"%s")
 }
 
-function create_entry {
+function start_entry {
+  update_time
   last_date=$curr_date
   last_time=$curr_time
   last_secs=$curr_secs
   update_entry
 }
 
-function calc_duration {
-  diff=$((curr_secs-last_secs))
-  duration=$(date -u -d @"$diff" +"%H:%M:%S")
+function update_entry {
+  update_time
+  duration=$(date -u -d @"$((curr_secs-last_secs))" +"%H:%M:%S")
+  curr_entry="  ${duration} | ${last_date} | ${last_time} - ${curr_time}"
 }
 
-function update_entry {
-  calc_duration
-  curr_entry="${duration} | ${last_date} | ${last_time} - ${curr_time}"
+function show_entry {
+  echo "$curr_entry"
 }
 
 function do_over {
   echo -ne "\033[1A"
 }
 
-update_time
-create_entry
-echo "$curr_entry"
-sleep 1
+start_entry
+show_entry
 
-update_time
-update_entry
-do_over
-echo "$curr_entry"
+while true; do
+  update_entry
+  do_over
+  show_entry
+  sleep 0.5
+done
