@@ -64,9 +64,11 @@ FORMAT_DATE="${FORMAT_DATE}"
 FORMAT_ENTRY="${FORMAT_ENTRY//\$/\\\$}"
 
 ENTRIES=(\\
-  "  a test1 \n" \\
-  "  b test2 \n" \\
-  "  c test3 \n" \\
+$(
+for entry in "${ENTRIES[@]}"; do
+  echo \ \ \""${entry}"\" \\
+done
+)
 )
 
 MYEOF
