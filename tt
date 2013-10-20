@@ -11,8 +11,30 @@ function create_entry {
   update_entry
 }
 
+
+function calc_duration {
+  regexp="([0-9]*):([0-9]*):([0-9]*)"
+  
+  [[ $last_time =~ $regexp ]]
+  local last_h="${BASH_REMATCH[1]}"
+  local last_m="${BASH_REMATCH[2]}"
+  local last_s="${BASH_REMATCH[3]}"
+  
+  [[ $curr_time =~ $regexp ]]
+  local curr_h="${BASH_REMATCH[1]}"
+  local curr_m="${BASH_REMATCH[2]}"
+  local curr_s="${BASH_REMATCH[3]}"
+  
+  curr_h=$(printf "%02d\n" $((curr_h-last_h)))
+  curr_m=$(printf "%02d\n" $((curr_m-last_m)))
+  curr_s=$(printf "%02d\n" $((curr_s-last_s)))
+  
+  duration="${curr_h}:${curr_m}:${curr_s}"
+}
+
 function update_entry {
-  curr_entry="??:?? | ${last_date} | ${last_time} - ${curr_time}"
+  calc_duration
+  curr_entry="${duration} | ${last_date} | ${last_time} - ${curr_time}"
 }
 
 function do_over {
