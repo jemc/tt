@@ -41,6 +41,21 @@ function do_over {
   echo -ne "\033[1A"
 }
 
+function save_file {
+  dummy="dummy"
+}
+
+function trap_func {
+  echo
+  echo 'saving...'
+  
+  save_file
+  
+  echo 'saved!'
+  exit 0
+}
+trap trap_func SIGINT SIGTERM
+
 
 for entry in "${ENTRIES[@]}"; do
   echo -ne "${entry}"
