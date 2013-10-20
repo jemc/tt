@@ -13,6 +13,17 @@ ENTRIES=(\
   "  c test3 \n" \
 )
 
+
+file=$1
+file_dir=$(dirname $file)
+
+mkdir -p $file_dir
+touch $file
+
+# TODO: add warning about eval that shows the first time the program runs
+# eval $file
+
+
 function update_time {
   curr_date=$(date +"$FORMAT_DATE")
   curr_time=$(date +"$FORMAT_TIME")
