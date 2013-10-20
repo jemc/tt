@@ -8,9 +8,6 @@ FORMAT_DATE="%a %b %d %Y"
 FORMAT_ENTRY=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time} \n"
 
 ENTRIES=(\
-  "  a test1 \n" \
-  "  b test2 \n" \
-  "  c test3 \n" \
 )
 
 
@@ -35,6 +32,7 @@ function start_entry {
   last_date=$curr_date
   last_time=$curr_time
   last_secs=$curr_secs
+  ENTRIES[${#ENTRIES[@]}]=""
   update_curr_entry
 }
 
@@ -42,6 +40,7 @@ function update_curr_entry {
   update_time
   duration=$(date -u -d @"$((curr_secs-last_secs))" +"$FORMAT_DURATION")
   eval "curr_entry=\"$FORMAT_ENTRY\""
+  ENTRIES[${#ENTRIES[@]}-1]="${curr_entry}"
 }
 
 function show_curr_entry {
@@ -78,9 +77,7 @@ MYEOF
 function trap_func {
   echo
   echo 'saving...'
-  
   save_file
-  
   echo 'saved!'
   exit 0
 }
