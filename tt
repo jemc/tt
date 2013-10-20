@@ -1,7 +1,9 @@
 #!/usr/bin/bash
 
-example1="??:?? | Sun Oct 20 2013 | 10:56 - 10:57"
-example2="??:?? | Sun Oct 20 2013 | 10:56 - 10:58"
+DATE=$(date +"%a %b %d %Y")
+
+example1="??:?? | ${DATE} | 10:56 - 10:57"
+example2="??:?? | ${DATE} | 10:56 - 10:58"
 
 do_over="echo -ne \033[1A"
 
