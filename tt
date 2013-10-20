@@ -1,14 +1,12 @@
 #!/usr/bin/bash
 
 # Associative array of default options
-declare -A default_opts=( \
-  ["refresh_time"]=0.2 \
-   \
-  ["format_duration"]="%H:%M:%S" \
-  ["format_time"]="%H:%M:%S" \
-  ["format_date"]="%a %b %d %Y" \
-  ["format_entry"]=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time}" \
-)
+declare -A default_opts
+default_opts["refresh_time"]=0.2
+default_opts["format_duration"]="%H:%M:%S"
+default_opts["format_time"]="%H:%M:%S"
+default_opts["format_date"]="%a %b %d %Y"
+default_opts["format_entry"]=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time}"
 
 # Associative array of operational options - start by copying all defaults
 declare -A opts=()
