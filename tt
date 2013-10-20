@@ -53,7 +53,6 @@ function do_over {
 }
 
 function save_file {
-  frmt_entry="$(echo -ne "${FORMAT_ENTRY}" | sed 's/\$/\\\$/g')"
   
   sh -c "cat > ${file}" <<MYEOF
 
@@ -62,7 +61,7 @@ REFRESH_TIME=${REFRESH_TIME}
 FORMAT_DURATION="${FORMAT_DURATION}"
 FORMAT_TIME="${FORMAT_TIME}"
 FORMAT_DATE="${FORMAT_DATE}"
-FORMAT_ENTRY="${frmt_entry}"
+FORMAT_ENTRY="${FORMAT_ENTRY//\$/\\\$}"
 
 ENTRIES=(\\
   "  a test1 \n" \\
