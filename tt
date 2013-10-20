@@ -1,8 +1,14 @@
 #!/usr/bin/bash
 
+REFRESH_TIME=0.2
+FORMAT_DURATION="%H:%M:%S"
+FORMAT_TIME="%H:%M:%S"
+FORMAT_DATE="%a %b %d %Y"
+FORMAT_ENTRY="  \${duration} | \${last_date} | \${last_time} - \${curr_time}"
+
 function update_time {
-  curr_date=$(date +"%a %b %d %Y")
-  curr_time=$(date +"%H:%M:%S")
+  curr_date=$(date +"$FORMAT_DATE")
+  curr_time=$(date +"$FORMAT_TIME")
   curr_secs=$(date +"%s")
 }
 
@@ -16,8 +22,8 @@ function start_entry {
 
 function update_entry {
   update_time
-  duration=$(date -u -d @"$((curr_secs-last_secs))" +"%H:%M:%S")
-  curr_entry="  ${duration} | ${last_date} | ${last_time} - ${curr_time}"
+  duration=$(date -u -d @"$((curr_secs-last_secs))" +"$FORMAT_DURATION")
+  eval "curr_entry=\"$FORMAT_ENTRY\""
 }
 
 function show_entry {
@@ -35,5 +41,5 @@ while true; do
   update_entry
   do_over
   show_entry
-  sleep 0.5
+  sleep $REFRESH_TIME
 done
