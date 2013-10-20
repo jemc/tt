@@ -5,17 +5,24 @@ function update_time {
   curr_time=$(date +"%H:%M:%S")
 }
 
-function update_line {
-  update_time
-  curr_line="??:?? | ${curr_date} | ${curr_time} - ${curr_time}"
+function create_entry {
+  last_date=$curr_date
+  last_time=$curr_time
+  update_entry
+}
+
+function update_entry {
+  curr_entry="??:?? | ${last_date} | ${last_time} - ${curr_time}"
 }
 
 do_over="echo -ne \033[1A"
 
-update_line
-echo "$curr_line"
+update_time
+create_entry
+echo "$curr_entry"
 sleep 1
 
-update_line
+update_time
+update_entry
 $do_over
-echo "$curr_line"
+echo "$curr_entry"
