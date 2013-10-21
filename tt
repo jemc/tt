@@ -66,8 +66,8 @@ function do_over {
 
 
 function read_file {
-  local regexp_option="^\s*([A-Za-z_]+)\s*=\s*\"(.*)\"\s*$"
-  local regexp_entries_header="^\s*entries:\s*"
+  local regexp_option="^([A-Za-z_]+)=\"(.*)\"$"
+  local regexp_entries_header="^entries:$"
   local entry_mode=""
   
   while IFS= read -r line; do
