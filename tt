@@ -8,14 +8,16 @@ default_opts["format_time"]="%H:%M:%S"
 default_opts["format_date"]="%a %b %d %Y"
 default_opts["format_entry"]=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time}"
 
-# Associative array of operational options - start by copying all defaults
+# Associative array of operational options
+#  Start by copying all defaults
 declare -A opts=()
 for key in "${!default_opts[@]}"; do
   opts["$key"]="${default_opts["$key"]}"
 done
 
-entries=(\
-)
+# Indexed array of entries
+#   Each line in entries section of file is interpreted as an entry
+declare -a entries=()
 
 file=$1
 file_dir=$(dirname $file)
@@ -64,15 +66,26 @@ function do_over {
 
 
 function read_file {
-  # regexp_simple="A"
-  regexp_var="^\s*([A-Za-z_]+)\s*=\s*\"(.*)\"\s*$"
-
+  local regexp_option="^\s*([A-Za-z_]+)\s*=\s*\"(.*)\"\s*$"
+  local regexp_entries_header="^\s*entries:\s*"
+  local entry_mode=""
+  
   while IFS= read -r line; do
-    # printf '%s\n' "$line"
-    if [[ $line =~ $regexp_var ]]; then
+    
+    if [[ $entry_mode ]]
+      then # Read the line in as an entry
+      entries[${#entries[@]}]="${line}"
+    
+    elif [[ $line =~ $regexp_entries_header ]]
+      then # Recognize the entries header and begin entry mode
+      entry_mode=true
+    
+    elif [[ $line =~ $regexp_option ]]
+      then # Recognize the line as an option declaration and retain it
       opts["${BASH_REMATCH[1]}"]=$"${BASH_REMATCH[2]}"
     fi
-  done < "$file"
+    
+  done < "${file}"
 }
 
 function save_file {
