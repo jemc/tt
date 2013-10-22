@@ -30,10 +30,10 @@ function usage {
 }
 
 function parse_opts {
-  while getopts “:x” OPTION; do
+  while getopts “:e:” OPTION; do
     case "${OPTION}" in
       
-      x) echo 'x received; never mind!'; exit 0;;
+      e) opts['manual_entry']="${OPTARG}";;
       
     esac
   done
@@ -45,7 +45,7 @@ function parse_arguments {
   # This construction is used allow the mandatory 'file' path arg
   #   to be placed before, after or during the opt args parsed by getopts
   
-  parse_opts $@ # Run getopts in a loop, stopping at the first non-option arg
+  parse_opts "$@" # Run getopts in a loop, stopping at the first non-option arg
   shift $((OPTIND-1)) # Shift args to put the arg rejected by getopts in $1
 
   state['file']=$1 # Save the rejected arg as the file path
@@ -53,7 +53,7 @@ function parse_arguments {
   shift 1; OPTIND=1 # Shift args past the rejected arg and reset OPTIND
   
   second_pass=true
-  parse_opts $@ # Run again, picking up any other options
+  parse_opts "$@" # Run again, picking up any other options
   shift $((OPTIND-1)) # Shift args past the second pass of scanned opts
   
   [[ -z $@ ]] || usage # Bad args if $@ is not empty at this point
@@ -61,7 +61,7 @@ function parse_arguments {
   # Process and verify state and option variables here
 }
 
-parse_arguments $@
+parse_arguments "$@"
 
 state['file_dir']=$(dirname ${state['file']})
 state['file_name']=$(basename ${state['file']})
@@ -72,7 +72,6 @@ touch "${state['file']}"
 
 # TODO: Don't destroy other random stuff in file header
 
-# TODO use getopts for other actions
 # add a note to the new entry (-n)
 # insert an arbitrary message as an entry with (-e)
 # specify a different output file than input file (-o)
@@ -171,16 +170,32 @@ trap trap_func SIGINT SIGTERM
 
 read_file
 
-for entry in "${entries[@]}"; do
-  echo "${entry}"
-done
 
-start_entry
-show_curr_entry
+function show_existing {
+  
+  for entry in "${entries[@]}"; do
+    echo "${entry}"
+  done
+}
 
-while true; do
-  update_curr_entry
-  do_over
+function run_new_entry {
+  start_entry
   show_curr_entry
-  sleep "${opts['refresh_time']}"
-done
+
+  while true; do
+    update_curr_entry
+    do_over
+    show_curr_entry
+    sleep "${opts['refresh_time']}"
+  done
+}
+
+show_existing
+
+if [[ -n "${opts['manual_entry']}" ]]; then
+  entries[${#entries[@]}]="${opts['manual_entry']}"
+  echo "${opts['manual_entry']}"
+  save_file
+else
+  run_new_entry
+fi
