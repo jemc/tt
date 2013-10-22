@@ -6,7 +6,7 @@ default_opts["refresh_time"]=0.2
 default_opts["format_duration"]="%H:%M:%S"
 default_opts["format_time"]="%H:%M:%S"
 default_opts["format_date"]="%a %b %d %Y"
-default_opts["format_entry"]=$"  \${duration} | \${last_date} | \${last_time} - \${curr_time}"
+default_opts["format_entry"]=$"  %{duration} | %{last_date} | %{last_time} - %{curr_time}"
 
 # Associative array of operational options
 #  Start by copying all defaults
@@ -15,44 +15,57 @@ for key in "${!default_opts[@]}"; do
   opts["$key"]="${default_opts["$key"]}"
 done
 
+# Associative array of state variables
+#   Each is able to be interpolated into format strings
+declare -A state
+
 # Indexed array of entries
 #   Each line in entries section of file is interpreted as an entry
 declare -a entries=()
 
-file=$1
-file_dir=$(dirname $file)
 
-mkdir -p $file_dir
-touch $file
+state['file']=$1
+state['file_dir']=$(dirname ${state['file']})
+state['file_name']=$(basename ${state['file']})
 
-# TODO: add warning about eval that shows the first time the program runs
-# eval $file
+mkdir -p "${state['file_dir']}"
+touch "${state['file']}"
+
+echo "${state['file']}"
+
+# TODO: Don't destroy other random stuff in file header
 
 # TODO use getopts for other actions
-# insert an arbitrary message as an entry with (-m)
+# add a note to the new entry (-n)
+# insert an arbitrary message as an entry with (-e)
 # specify a different output file than input file (-o)
 # specify a different output format than input format (-f)
 
 
 function update_time {
-  curr_date=$(date +"${opts['format_date']}")
-  curr_time=$(date +"${opts['format_time']}")
-  curr_secs=$(date +"%s")
+  state['curr_date']=$(date +"${opts['format_date']}")
+  state['curr_time']=$(date +"${opts['format_time']}")
+  state['curr_secs']=$(date +"%s")
 }
 
 function start_entry {
   update_time
-  last_date=$curr_date
-  last_time=$curr_time
-  last_secs=$curr_secs
+  state['last_date']="${state['curr_date']}"
+  state['last_time']="${state['curr_time']}"
+  state['last_secs']="${state['curr_secs']}"
   entries[${#entries[@]}]=""
   update_curr_entry
 }
 
 function update_curr_entry {
   update_time
-  duration=$(date -u -d @"$((curr_secs-last_secs))" +"${opts['format_duration']}")
-  eval "curr_entry=\"${opts['format_entry']}\""
+  state['duration']=$(date -u -d @"$((state['curr_secs']-state['last_secs']))" +"${opts['format_duration']}")
+  
+  curr_entry="${opts['format_entry']}"
+  for key in "${!state[@]}"; do
+    curr_entry="${curr_entry/\%\{$key\}/${state[$key]}}"
+  done
+  
   entries[${#entries[@]}-1]="${curr_entry}"
 }
 
@@ -85,12 +98,12 @@ function read_file {
       opts["${BASH_REMATCH[1]}"]=$"${BASH_REMATCH[2]}"
     fi
     
-  done < "${file}"
+  done < "${state['file']}"
 }
 
 function save_file {
   
-  sh -c "cat > ${file}" <<MYEOF
+  sh -c "cat > ${state['file']}" <<MYEOF
 
 refresh_time="${opts["refresh_time"]}"
 
