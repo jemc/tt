@@ -24,14 +24,51 @@ declare -A state
 declare -a entries=()
 
 
-state['file']=$1
+function usage {
+  echo 'bad form.. better luck next time!'
+  exit 1
+}
+
+function parse_opts {
+  while getopts “:x” OPTION; do
+    case "${OPTION}" in
+      
+      x) echo 'x received; never mind!'; exit 0;;
+      
+    esac
+  done
+}
+
+function parse_arguments {
+  
+  # Note that the getopts loop is happening twice here...
+  # This construction is used allow the mandatory 'file' path arg
+  #   to be placed before, after or during the opt args parsed by getopts
+  
+  parse_opts $@ # Run getopts in a loop, stopping at the first non-option arg
+  shift $((OPTIND-1)) # Shift args to put the arg rejected by getopts in $1
+
+  state['file']=$1 # Save the rejected arg as the file path
+
+  shift 1; OPTIND=1 # Shift args past the rejected arg and reset OPTIND
+  
+  second_pass=true
+  parse_opts $@ # Run again, picking up any other options
+  shift $((OPTIND-1)) # Shift args past the second pass of scanned opts
+  
+  [[ -z $@ ]] || usage # Bad args if $@ is not empty at this point
+  
+  # Process and verify state and option variables here
+}
+
+parse_arguments $@
+
 state['file_dir']=$(dirname ${state['file']})
 state['file_name']=$(basename ${state['file']})
 
 mkdir -p "${state['file_dir']}"
 touch "${state['file']}"
 
-echo "${state['file']}"
 
 # TODO: Don't destroy other random stuff in file header
 
