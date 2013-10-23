@@ -25,14 +25,38 @@ declare -a entries=()
 
 
 function usage {
-  echo 'bad form.. better luck next time!'
+  cat <<USAGE_STR
+Usage: tt path [<options>]
+
+When used with no options, tt begins a new time entry in the file specified by 
+the path argument.  If the file or the directory path do not exist, they are 
+created.
+
+command line options:
+  -h          show this message and exit
+  -e "entry"  specify a string as the new entry rather than starting the timer
+
+Send a SIGINT or SIGTERM or stop the timer.  Most commonly, this can be done 
+with the Ctrl+C key combination. 
+
+The data is saved back to the file periodically and upon receiving the 
+terminating signal. Saved data includes settings variables, all time entries, 
+and anything else that was originally in the file.
+
+Upon opening an existing file, settings variables are read in if they exist in 
+the recognized format.  Additionally, each parent directory will be checked for
+a .tt-defaults file.  If such a file exists, settings variables found within 
+it will be used, with more local files overriding upper-level files.
+
+USAGE_STR
   exit 1
 }
 
 function parse_opts {
-  while getopts “:e:” OPTION; do
+  while getopts “:he:” OPTION; do
     case "${OPTION}" in
       
+      h) usage;;
       e) opts['manual_entry']="${OPTARG}";;
       
     esac
@@ -72,8 +96,7 @@ touch "${state['file']}"
 
 # TODO: Don't destroy other random stuff in file header
 
-# add a note to the new entry (-n)
-# insert an arbitrary message as an entry with (-e)
+# add a note to the new entry (-n)tustusage 
 # specify a different output file than input file (-o)
 # specify a different output format than input format (-f)
 
@@ -139,7 +162,8 @@ function read_file {
 
 function save_file {
   
-  sh -c "cat > ${state['file']}" <<MYEOF
+  sh -c "cat > ${state['file']}" <<FILE_FMT
+tt
 
 refresh_time="${opts["refresh_time"]}"
 
@@ -154,7 +178,7 @@ for entry in "${entries[@]}"; do
   echo "${entry}"
 done
 )
-MYEOF
+FILE_FMT
 
 }
 
