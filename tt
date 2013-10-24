@@ -35,6 +35,9 @@ created.
 command line options:
   -h          show this message and exit
   -e "entry"  specify a string as the new entry rather than starting the timer
+  -s          show a summary of the given path; 
+                if the path is file, use it as the file to summarize;
+                if it is a directory, look for tt files recursively within
 
 Send a SIGINT or SIGTERM or stop the timer.  Most commonly, this can be done 
 with the Ctrl+C key combination. 
@@ -53,11 +56,12 @@ USAGE_STR
 }
 
 function parse_opts {
-  while getopts “:he:” OPTION; do
+  while getopts “:he:s” OPTION; do
     case "${OPTION}" in
       
       h) usage;;
       e) opts['manual_entry']="${OPTARG}";;
+      s) opts['summary']=true;;
       
     esac
   done
@@ -76,22 +80,16 @@ function parse_arguments {
 
   shift 1; OPTIND=1 # Shift args past the rejected arg and reset OPTIND
   
-  second_pass=true
   parse_opts "$@" # Run again, picking up any other options
   shift $((OPTIND-1)) # Shift args past the second pass of scanned opts
   
   [[ -z $@ ]] || usage # Bad args if $@ is not empty at this point
   
   # Process and verify state and option variables here
+  state['file_dir']=$(dirname ${state['file']})
+  state['file_name']=$(basename ${state['file']})
 }
 
-parse_arguments "$@"
-
-state['file_dir']=$(dirname ${state['file']})
-state['file_name']=$(basename ${state['file']})
-
-mkdir -p "${state['file_dir']}"
-touch "${state['file']}"
 
 
 # TODO: Don't destroy other random stuff in file header
@@ -99,6 +97,64 @@ touch "${state['file']}"
 # add a note to the new entry (-n)tustusage 
 # specify a different output file than input file (-o)
 # specify a different output format than input format (-f)
+
+function touch_dir {
+  mkdir -p "${state['file_dir']}"
+}
+
+function touch_file {
+  touch_dir
+  touch "${state['file']}"
+}
+
+function read_file {
+  local regexp_option="^([A-Za-z_]+)=\"(.*)\"$"
+  local regexp_entries_header="^entries:$"
+  local entry_mode=""
+  
+  touch_file
+  
+  while IFS= read -r line; do
+    
+    if [[ $entry_mode ]]
+      then # Read the line in as an entry
+      entries[${#entries[@]}]="${line}"
+    
+    elif [[ $line =~ $regexp_entries_header ]]
+      then # Recognize the entries header and begin entry mode
+      entry_mode=true
+    
+    elif [[ $line =~ $regexp_option ]]
+      then # Recognize the line as an option declaration and retain it
+      opts["${BASH_REMATCH[1]}"]=$"${BASH_REMATCH[2]}"
+    fi
+    
+  done < "${state['file']}"
+}
+
+function save_file {
+  
+  touch_file
+  
+  sh -c "cat > ${state['file']}" <<FILE_FMT
+#tt
+
+refresh_time="${opts["refresh_time"]}"
+
+format_duration="${opts["format_duration"]}"
+format_time="${opts['format_time']}"
+format_date="${opts['format_date']}"
+format_entry="${opts['format_entry']}"
+
+entries:
+$(
+for entry in "${entries[@]}"; do
+  echo "${entry}"
+done
+)
+FILE_FMT
+
+}
 
 
 function update_time {
@@ -136,52 +192,6 @@ function do_over {
   echo -ne "\033[1A"
 }
 
-
-function read_file {
-  local regexp_option="^([A-Za-z_]+)=\"(.*)\"$"
-  local regexp_entries_header="^entries:$"
-  local entry_mode=""
-  
-  while IFS= read -r line; do
-    
-    if [[ $entry_mode ]]
-      then # Read the line in as an entry
-      entries[${#entries[@]}]="${line}"
-    
-    elif [[ $line =~ $regexp_entries_header ]]
-      then # Recognize the entries header and begin entry mode
-      entry_mode=true
-    
-    elif [[ $line =~ $regexp_option ]]
-      then # Recognize the line as an option declaration and retain it
-      opts["${BASH_REMATCH[1]}"]=$"${BASH_REMATCH[2]}"
-    fi
-    
-  done < "${state['file']}"
-}
-
-function save_file {
-  
-  sh -c "cat > ${state['file']}" <<FILE_FMT
-tt
-
-refresh_time="${opts["refresh_time"]}"
-
-format_duration="${opts["format_duration"]}"
-format_time="${opts['format_time']}"
-format_date="${opts['format_date']}"
-format_entry="${opts['format_entry']}"
-
-entries:
-$(
-for entry in "${entries[@]}"; do
-  echo "${entry}"
-done
-)
-FILE_FMT
-
-}
-
 function trap_func {
   echo
   echo 'saving...'
@@ -190,17 +200,6 @@ function trap_func {
   exit 0
 }
 trap trap_func SIGINT SIGTERM
-
-
-read_file
-
-
-function show_existing {
-  
-  for entry in "${entries[@]}"; do
-    echo "${entry}"
-  done
-}
 
 function run_new_entry {
   start_entry
@@ -214,12 +213,41 @@ function run_new_entry {
   done
 }
 
-show_existing
+function show_existing {
+  
+  for entry in "${entries[@]}"; do
+    echo "${entry}"
+  done
+}
 
-if [[ -n "${opts['manual_entry']}" ]]; then
-  entries[${#entries[@]}]="${opts['manual_entry']}"
-  echo "${opts['manual_entry']}"
-  save_file
+
+function operation_normal {
+  
+  read_file
+  show_existing
+  
+  if [[ -n "${opts['manual_entry']}" ]]; then
+    entries[${#entries[@]}]="${opts['manual_entry']}"
+    echo "${opts['manual_entry']}"
+    save_file
+  else
+    run_new_entry
+  fi
+}
+
+
+function operation_summary {
+  
+  read_file
+  show_existing
+  
+}
+
+
+parse_arguments "$@"
+
+if [[ -n "${opts['summary']}" ]]; then
+  operation_summary
 else
-  run_new_entry
+  operation_normal
 fi
