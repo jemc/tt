@@ -7,6 +7,8 @@ default_opts["format_duration"]="%H:%M:%S"
 default_opts["format_time"]="%H:%M:%S"
 default_opts["format_date"]="%a %b %d %Y"
 default_opts["format_entry"]=$"  %{duration} | %{last_date} | %{last_time} - %{curr_time}"
+default_opts["format_total"]="total: %H:%M:%S"
+
 
 # Associative array of operational options
 #  Start by copying all defaults
@@ -145,6 +147,7 @@ format_duration="${opts["format_duration"]}"
 format_time="${opts['format_time']}"
 format_date="${opts['format_date']}"
 format_entry="${opts['format_entry']}"
+format_total="${opts['format_total']}"
 
 entries:
 $(
@@ -242,7 +245,7 @@ function show_total {
     fi
   done
   
-  echo total: $(date -u -d @$total_duration +"${opts['format_duration']}")
+  echo $(date -u -d @$total_duration +"${opts['format_total']}")
 }
 
 
