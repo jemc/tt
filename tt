@@ -219,27 +219,7 @@ function show_existing {
   done
 }
 
-
-function operation_normal {
-  
-  read_file
-  show_existing
-  
-  if [[ -n "${opts['manual_entry']}" ]]; then
-    entries[${#entries[@]}]="${opts['manual_entry']}"
-    echo "${opts['manual_entry']}"
-    save_file
-  else
-    run_new_entry
-  fi
-}
-
-
-function operation_summary {
-  
-  read_file
-  show_existing
-  
+function show_total {
   # Construct a regular expression that will match the whole entry 
   #   and capture the duration string
   #   Note that back-to-back %{state}%{vars} will cause issues here...
@@ -263,6 +243,28 @@ function operation_summary {
   done
   
   echo total: $(date -u -d @$total_duration +"${opts['format_duration']}")
+}
+
+
+function operation_normal {
+  
+  read_file
+  show_existing
+  
+  if [[ -n "${opts['manual_entry']}" ]]; then
+    entries[${#entries[@]}]="${opts['manual_entry']}"
+    echo "${opts['manual_entry']}"
+    save_file
+  else
+    run_new_entry
+  fi
+}
+
+
+function operation_summary {
+  read_file
+  show_existing
+  show_total
 }
 
 
