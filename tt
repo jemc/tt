@@ -116,6 +116,8 @@ function read_file {
   
   touch_file
   
+  entries=()
+  
   while IFS= read -r line; do
     
     if [[ $entry_mode ]]
@@ -265,9 +267,26 @@ function operation_normal {
 
 
 function operation_summary {
-  read_file
-  show_existing
-  show_total
+  
+  # For each file described by the input path
+  for file in $(find ${state['file']}); do
+    
+    # If file is readable and isn't a directory...
+    if [[ -r $file ]] && [[ ! -d $file ]]; then
+      
+      # If the file has the tt header
+      if [[ "$(read -n 3 str <$file; echo $str)" == "#tt" ]] || [[ $(head -n 1 $file) =~ "#tt" ]]; then
+        
+        state['file']="${file}"
+        echo $file
+        read_file
+        show_existing
+        show_total
+        echo
+      fi
+    fi
+  done
+  
 }
 
 
