@@ -214,7 +214,6 @@ function run_new_entry {
 }
 
 function show_existing {
-  
   for entry in "${entries[@]}"; do
     echo "${entry}"
   done
@@ -241,6 +240,29 @@ function operation_summary {
   read_file
   show_existing
   
+  # Construct a regular expression that will match the whole entry 
+  #   and capture the duration string
+  #   Note that back-to-back %{state}%{vars} will cause issues here...
+  #     (not sure how to deal with that case...)
+  local regexp
+  regexp="${opts['format_entry']}"
+  regexp=$(echo "${regexp}" | perl -pe 's/(.)/\\\1/g')
+  regexp=$(echo "${regexp}" | perl -pe 's/\\\%\\\{\\d\\u\\r\\a\\t\\i\\o\\n\\\}/(.+)/g')
+  regexp=$(echo "${regexp}" | perl -pe 's/\\\%\\\{(\\[^}])*\\\}/.+/g')
+  
+  local total_duration
+  total_duration=$((0))
+  for entry in "${entries[@]}"; do
+    if [[ "$entry" =~ $regexp ]]; then
+      # Note that date is guessing the date formaat and using an uncommon one might break it...
+      #   (not sure how to deal with that case...)
+      local duration
+      read -a duration <<< $(date -d "${BASH_REMATCH[1]}" +"%H %M %S")
+      total_duration=$(( total_duration + duration[0]*60*60 + duration[1]*60 + duration[2] ))
+    fi
+  done
+  
+  echo total: $(date -u -d @$total_duration +"${opts['format_duration']}")
 }
 
 
