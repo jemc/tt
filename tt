@@ -224,7 +224,7 @@ function show_existing {
   done
 }
 
-function show_total {
+function calculate_total {
   # Construct a regular expression that will match the whole entry 
   #   and capture the duration string
   #   Note that back-to-back %{state}%{vars} will cause issues here...
@@ -235,7 +235,6 @@ function show_total {
   regexp=$(echo "${regexp}" | perl -pe 's/\\\%\\\{\\d\\u\\r\\a\\t\\i\\o\\n\\\}/(.+)/g')
   regexp=$(echo "${regexp}" | perl -pe 's/\\\%\\\{(\\[^}])*\\\}/.+/g')
   
-  local total_duration
   total_duration=$((0))
   for entry in "${entries[@]}"; do
     if [[ "$entry" =~ $regexp ]]; then
@@ -246,7 +245,9 @@ function show_total {
       total_duration=$(( total_duration + duration[0]*60*60 + duration[1]*60 + duration[2] ))
     fi
   done
-  
+}
+
+function show_total {
   echo $(date -u -d @$total_duration +"${opts['format_total']}")
 }
 
@@ -268,6 +269,8 @@ function operation_normal {
 
 function operation_summary {
   
+  full_total_duration=$((0))
+  
   # For each file described by the input path
   for file in $(find ${state['file']}); do
     
@@ -281,12 +284,17 @@ function operation_summary {
         echo $file
         read_file
         show_existing
+        calculate_total
         show_total
         echo
+        
+        full_total_duration=$(( full_total_duration + total_duration ))
       fi
     fi
   done
   
+  total_duration=$(( full_total_duration ))
+  show_total
 }
 
 
