@@ -9,6 +9,8 @@ default_opts["format_date"]="%a %b %d %Y"
 default_opts["format_entry"]=$"  %{duration} | %{last_date} | %{last_time} - %{curr_time}"
 default_opts["format_total"]="total: %H:%M:%S"
 
+default_opts["summary"]=$((0))
+
 
 # Associative array of operational options
 #  Start by copying all defaults
@@ -39,7 +41,8 @@ command line options:
   -e "entry"  specify a string as the new entry rather than starting the timer
   -s          show a summary of the given path; 
                 if the path is file, use it as the file to summarize;
-                if it is a directory, look for tt files recursively within
+                if it is a directory, look for tt files recursively within.
+                (using more than one 's' gives more verbosity to the summary)
 
 Send a SIGINT or SIGTERM or stop the timer.  Most commonly, this can be done 
 with the Ctrl+C key combination. 
@@ -63,7 +66,7 @@ function parse_opts {
       
       h) usage;;
       e) opts['manual_entry']="${OPTARG}";;
-      s) opts['summary']=true;;
+      s) opts['summary']=$(( opts['summary'] + 1 ));;
       
     esac
   done
@@ -283,10 +286,10 @@ function operation_summary {
         state['file']="${file}"
         echo $file
         read_file
-        show_existing
+        [[ "${opts['summary']}" -lt 3 ]] || show_existing
         calculate_total
-        show_total
-        echo
+        [[ "${opts['summary']}" -lt 2 ]] || show_total
+        [[ "${opts['summary']}" -lt 2 ]] || echo
         
         full_total_duration=$(( full_total_duration + total_duration ))
       fi
@@ -300,7 +303,7 @@ function operation_summary {
 
 parse_arguments "$@"
 
-if [[ -n "${opts['summary']}" ]]; then
+if [[ "${opts['summary']}" -gt 0 ]]; then
   operation_summary
 else
   operation_normal
